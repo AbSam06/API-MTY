@@ -31,6 +31,8 @@ exports.createNews = async (req, res) => {
     const news = await News.create({ title, resume, content });
 
     if (req.files && req.files.length > 0) {
+      console.log("🟡 Fichiers reçus :", req.files);
+      console.log("📨 Corps reçu :", req.body);
       for (const file of req.files) {
         const media_url = `${req.protocol}://${req.get('host')}/uploads/${file.filename}`;
         const media_type = file.mimetype.startsWith('video') ? 'video' : 'image';
