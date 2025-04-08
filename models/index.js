@@ -16,14 +16,12 @@ Favorite.belongsTo(News, { foreignKey: 'news_id' });
 News.belongsToMany(Media, {
   through: NewsMedia,
   foreignKey: 'news_id',
-  otherKey: 'media_id',
   onDelete: 'CASCADE',
 });
 
 Media.belongsToMany(News, {
   through: NewsMedia,
   foreignKey: 'media_id',
-  otherKey: 'news_id',
   onDelete: 'CASCADE',
 });
 
