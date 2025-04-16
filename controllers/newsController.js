@@ -1,19 +1,37 @@
 const { News, Media, NewsMedia } = require('../models');
 const fs = require('fs');
 const path = require('path');
+const { sequelize } = require('../models')
 
 exports.getAllNews = async (req, res) => {
   try {
+    // 1. D'abord, récupérez toutes les actualités
     const news = await News.findAll({
-      include: [
-        {
-          model: Media,
-          through: { attributes: [] }, // Ne pas inclure les attributs de la table de jonction
-        },
-      ],
       order: [["createdAt", "DESC"]],
     });
-    res.json(news);
+    
+    // 2. Pour chaque actualité, récupérez manuellement les médias associés
+    const newsWithMedia = [];
+    
+    for (const newsItem of news) {
+      // Recherchez manuellement dans la table NewsMedia
+      const newsMedias = await sequelize.query(
+        "SELECT m.* FROM Media m JOIN news_media nm ON m.id = nm.media_id WHERE nm.news_id = :newsId",
+        {
+          replacements: { newsId: newsItem.id },
+          type: sequelize.QueryTypes.SELECT
+        }
+      );
+      
+      console.log(`🔍 Actualité ${newsItem.id} (${newsItem.title}) : ${newsMedias.length} médias trouvés`);
+      
+      // Créez un nouvel objet avec les médias ajoutés
+      const newsWithMediaItem = newsItem.toJSON();
+      newsWithMediaItem.Media = newsMedias;
+      newsWithMedia.push(newsWithMediaItem);
+    }
+    
+    res.json(newsWithMedia);
   } catch (error) {
     console.error("Erreur lors de la récupération des actualités :", error);
     res.status(500).json({ message: "Erreur serveur" });
@@ -53,6 +71,7 @@ exports.createNews = async (req, res) => {
     }
     
     const news = await News.create({ title, resume, content });
+    
     if (req.files && req.files.length > 0) {
       console.log("🟡 Fichiers reçus :", req.files);
       for (const file of req.files) {
@@ -60,7 +79,12 @@ exports.createNews = async (req, res) => {
         const media_type = file.mimetype.startsWith('video') ? 'video' : 'image';
         
         const media = await Media.create({ media_url, media_type });
-        await NewsMedia.create({ NewsId: news.id, MediaId: media.id });
+        
+        // Utiliser les noms de colonnes corrects news_id et media_id
+        await NewsMedia.create({ 
+          news_id: news.id,
+          media_id: media.id
+        });
       }
     }
     
@@ -100,7 +124,12 @@ exports.updateNews = async (req, res) => {
         const media_type = file.mimetype.startsWith('video') ? 'video' : 'image';
         
         const media = await Media.create({ media_url, media_type });
-        await NewsMedia.create({ NewsId: news.id, MediaId: media.id });
+        
+        // CORRECTION ICI : Utiliser les noms de colonnes corrects news_id et media_id
+        await NewsMedia.create({ 
+          news_id: news.id, 
+          media_id: media.id 
+        });
       }
     }
     
@@ -181,8 +210,9 @@ exports.deleteMediaFromNews = async (req, res) => {
     const { newsId, mediaId } = req.params;
     
     // Vérifier si l'association existe
+    // CORRECTION ICI : Utiliser les noms de colonnes corrects news_id et media_id
     const newsMedia = await NewsMedia.findOne({
-      where: { NewsId: newsId, MediaId: mediaId }
+      where: { news_id: newsId, media_id: mediaId }
     });
     
     if (!newsMedia) {

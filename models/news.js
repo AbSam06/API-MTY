@@ -11,4 +11,12 @@ const News = sequelize.define('News', {
   updatedAt: 'updatedAt',
 });
 
+News.associate = (models) => {
+  News.belongsToMany(models.Media, {
+    through: 'NewsMedia',
+    foreignKey: 'news_id', // Utilisez le même nom que dans votre table
+    otherKey: 'media_id'
+  });
+};
+
 module.exports = News;
