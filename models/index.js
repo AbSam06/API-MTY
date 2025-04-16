@@ -14,6 +14,19 @@ News.hasMany(Favorite, { foreignKey: 'news_id', onDelete: 'CASCADE' });
 Favorite.belongsTo(News, { foreignKey: 'news_id' });
 
 
+// Définir les associations avec gestion de la suppression en cascade
+News.belongsToMany(Media, { 
+  through: NewsMedia,
+  foreignKey: 'NewsId',
+  onDelete: 'CASCADE' 
+});
+Media.belongsToMany(News, { 
+  through: NewsMedia,
+  foreignKey: 'MediaId',
+  onDelete: 'CASCADE' 
+});
+
+
 module.exports = {
   sequelize,
   User,
