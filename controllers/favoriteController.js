@@ -1,9 +1,17 @@
 const { Favorite } = require('../models');
 
+
 exports.addFavorite = async (req, res) => {
   try {
     const { user_id, news_id } = req.body;
-    const fav = await Favorite.create({ user_id, news_id });
+    
+    // Add createdAt explicitly with the current date-time
+    const fav = await Favorite.create({
+      user_id,
+      news_id,
+      createdAt: new Date()  // Set createdAt to current timestamp
+    });
+    
     res.status(201).json({ message: 'Ajouté aux favoris', fav });
   } catch (err) {
     res.status(500).json({ message: 'Erreur serveur', error: err.message });
